@@ -1,4 +1,5 @@
 const connection = require("../config/connection");
+const { addFriend } = require("../controllers/userController");
 const { User, Thought } = require("../models");
 
 connection.on("error", (err) => err);
@@ -11,6 +12,7 @@ connection.once("open", async () => {
     .toArray();
   if (userCheck.length) {
     await connection.dropCollection("user");
+    console.log("User collection dropped.");
   }
 
   let thoughtCheck = await connection.db
@@ -18,6 +20,7 @@ connection.once("open", async () => {
     .toArray();
   if (thoughtCheck.length) {
     await connection.dropCollection("thought");
+    console.log("User collection dropped.");
   }
 
   const users = [
@@ -65,6 +68,27 @@ connection.once("open", async () => {
   await User.collection.insertMany(users);
 
   await Thought.collection.insertMany(thoughts);
+
+  await User.updateOne(
+    { _id: users.ops[0]._id },
+    { $push: { friends: users.ops[1]._id } }
+  );
+
+  // Add alice123 (first user) as a friend to bob456 (second user)
+  await User.updateOne(
+    { _id: users.ops[1]._id },
+    { $push: { friends: users.ops[0]._id } }
+  );
+
+  await User.updateOne(
+    { _id: users.ops[0]._id },
+    { $push: { thoughts: thoughts.ops[0]._id } }
+  );
+
+  await User.updateOne(
+    { _id: users.ops[1]._id },
+    { $push: { thoughts: thoughts.ops[1]._id } }
+  );
 
   console.table(users);
   console.table(thoughts);
