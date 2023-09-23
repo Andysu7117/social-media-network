@@ -1,5 +1,4 @@
 const connection = require("../config/connection");
-const { addFriend } = require("../controllers/userController");
 const { User, Thought } = require("../models");
 
 connection.on("error", (err) => err);
@@ -65,29 +64,27 @@ connection.once("open", async () => {
     },
   ];
 
-  await User.collection.insertMany(users);
+  const insertedUsers = await User.collection.insertMany(users);
+  console.log("Inserted Users:", insertedUsers);
 
-  await Thought.collection.insertMany(thoughts);
+  const insertedThoughts = await Thought.collection.insertMany(thoughts);
+  console.log("Inserted Thoughts:", insertedThoughts);
 
   await User.updateOne(
-    { _id: users.ops[0]._id },
-    { $push: { friends: users.ops[1]._id } }
+    { _id: insertedUsers.insertedIds["0"] },
+    { $push: { friends: insertedUsers.insertedIds["1"] } }
   );
-
-  // Add alice123 (first user) as a friend to bob456 (second user)
   await User.updateOne(
-    { _id: users.ops[1]._id },
-    { $push: { friends: users.ops[0]._id } }
+    { _id: insertedUsers.insertedIds["1"] },
+    { $push: { friends: insertedUsers.insertedIds["0"] } }
   );
-
   await User.updateOne(
-    { _id: users.ops[0]._id },
-    { $push: { thoughts: thoughts.ops[0]._id } }
+    { _id: insertedUsers.insertedIds["0"] },
+    { $push: { thoughts: insertedThoughts.insertedIds["0"] } }
   );
-
   await User.updateOne(
-    { _id: users.ops[1]._id },
-    { $push: { thoughts: thoughts.ops[1]._id } }
+    { _id: insertedUsers.insertedIds["1"] },
+    { $push: { thoughts: insertedThoughts.insertedIds["1"] } }
   );
 
   console.table(users);
